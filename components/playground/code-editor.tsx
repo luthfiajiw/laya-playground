@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { json, jsonParseLinter } from "@codemirror/lang-json";
 import { lintGutter, linter } from "@codemirror/lint";
@@ -49,7 +49,7 @@ const jevLightTheme = EditorView.theme(
       borderLeftColor: "#18181b",
     },
     ".cm-matchingBracket": {
-      backgroundColor: "#f4f4f5",
+      backgroundColor: "rgb(24 24 27 / 0.06)",
       outline: "1px solid #d4d4d8",
       borderRadius: "2px",
     },
@@ -88,7 +88,17 @@ export function CodeEditor({
   className,
 }: CodeEditorProps) {
   const editorViewRef = useRef<EditorView | null>(null);
+  const onChangeRef = useRef(onChange);
+  const onRunShortcutRef = useRef(onRunShortcut);
   const shortcutCompartment = useMemo(() => new Compartment(), []);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useEffect(() => {
+    onRunShortcutRef.current = onRunShortcut;
+  }, [onRunShortcut]);
 
   useEffect(() => {
     if (mode !== "json") {
@@ -98,25 +108,9 @@ export function CodeEditor({
     onDiagnosticsChange?.(validateJsonValue(value));
   }, [mode, value, onDiagnosticsChange]);
 
-  useEffect(() => {
-    const view = editorViewRef.current;
-    if (!view) return;
-    view.dispatch({
-      effects: shortcutCompartment.reconfigure(
-        Prec.highest(
-          keymap.of([
-            {
-              key: "Mod-Enter",
-              run: () => {
-                onRunShortcut?.();
-                return true;
-              },
-            },
-          ]),
-        ),
-      ),
-    });
-  }, [onRunShortcut, shortcutCompartment]);
+  const handleChange = useCallback((val: string) => {
+    onChangeRef.current?.(val);
+  }, []);
 
   const extensions = useMemo(() => {
     const exts = [
@@ -143,26 +137,69 @@ export function CodeEditor({
     return exts;
   }, [mode, placeholder, readOnly, shortcutCompartment]);
 
+  useEffect(() => {
+    const view = editorViewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: shortcutCompartment.reconfigure(
+        Prec.highest(
+          keymap.of([
+            {
+              key: "Mod-Enter",
+              run: () => {
+                onRunShortcutRef.current?.();
+                return true;
+              },
+            },
+          ]),
+        ),
+      ),
+    });
+  }, [extensions, shortcutCompartment]);
+
   const basicSetup = useMemo(
     () => ({
       lineNumbers: true,
       highlightActiveLineGutter: !readOnly,
       highlightActiveLine: !readOnly,
       foldGutter: false,
+      drawSelection: !readOnly,
       dropCursor: !readOnly,
-      allowMultipleSelections: true,
+      allowMultipleSelections: !readOnly,
       indentOnInput: !readOnly,
       bracketMatching: true,
       closeBrackets: !readOnly && mode === "json",
       autocompletion: false,
-      rectangularSelection: true,
-      crosshairCursor: false,
+      rectangularSelection: !readOnly,
+      crosshairCursor: !readOnly,
       highlightSelectionMatches: false,
       foldKeymap: true,
       searchKeymap: true,
       lintKeymap: false,
     }),
     [mode, readOnly],
+  );
+
+  const handleCreateEditor = useCallback(
+    (view: EditorView) => {
+      editorViewRef.current = view;
+      view.dispatch({
+        effects: shortcutCompartment.reconfigure(
+          Prec.highest(
+            keymap.of([
+              {
+                key: "Mod-Enter",
+                run: () => {
+                  onRunShortcutRef.current?.();
+                  return true;
+                },
+              },
+            ]),
+          ),
+        ),
+      });
+    },
+    [shortcutCompartment],
   );
 
   return (
@@ -181,25 +218,8 @@ export function CodeEditor({
         readOnly={readOnly}
         basicSetup={basicSetup}
         extensions={extensions}
-        onCreateEditor={(view) => {
-          editorViewRef.current = view;
-          view.dispatch({
-            effects: shortcutCompartment.reconfigure(
-              Prec.highest(
-                keymap.of([
-                  {
-                    key: "Mod-Enter",
-                    run: () => {
-                      onRunShortcut?.();
-                      return true;
-                    },
-                  },
-                ]),
-              ),
-            ),
-          });
-        }}
-        onChange={readOnly ? undefined : (val) => onChange?.(val)}
+        onCreateEditor={handleCreateEditor}
+        onChange={readOnly ? undefined : handleChange}
         style={{ height: "100%" }}
       />
     </div>

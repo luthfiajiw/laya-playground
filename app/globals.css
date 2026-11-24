@@ -119,6 +119,7 @@
 .laya-cm-editor .cm-content {
   padding: 10px 0;
   caret-color: #18181b;
+  user-select: text;
 }
 
 .laya-cm-editor .cm-line {
@@ -146,8 +147,9 @@
   color: #52525b;
 }
 
+/* Must stay translucent so .cm-selectionLayer (z-index: -2) remains visible */
 .laya-cm-editor .cm-activeLine {
-  background-color: #f8f8f9;
+  background-color: rgb(24 24 27 / 0.03);
 }
 
 .laya-cm-editor.laya-cm-readonly .cm-activeLine {
@@ -186,9 +188,19 @@
   color: #a1a1aa;
 }
 
-.laya-cm-editor .cm-selectionBackground,
-.laya-cm-editor .cm-editor.cm-focused .cm-selectionBackground {
+.laya-cm-editor .cm-selectionBackground {
   background-color: #e4e4e7 !important;
+}
+
+.laya-cm-editor .cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
+.laya-cm-editor .cm-editor.cm-focused .cm-selectionBackground {
+  background-color: #bfdbfe !important;
+}
+
+.laya-cm-editor.laya-cm-readonly .cm-content ::selection,
+.laya-cm-editor.laya-cm-readonly .cm-line::selection,
+.laya-cm-editor.laya-cm-readonly .cm-line ::selection {
+  background-color: #bfdbfe;
 }
 
 .laya-cm-editor .cm-lintRange-error {
