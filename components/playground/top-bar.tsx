@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import {
   Check,
   ChevronDown,
@@ -8,7 +9,7 @@ import {
   SlidersHorizontal,
   Terminal,
 } from "lucide-react";
-import { EXAMPLE_PRESETS } from "@/lib/laya/templates";
+import { EXAMPLE_PRESETS, PRESET_GROUPS } from "@/lib/laya/templates";
 import type {
   HistoryEntry,
   LayaHealthState,
@@ -19,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -157,31 +159,45 @@ export function TopBar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-72">
-            <DropdownMenuLabel className="text-[11px] font-medium text-zinc-500">
-              Example presets
-            </DropdownMenuLabel>
-            {EXAMPLE_PRESETS.map((preset) => {
-              const isSelected = preset.id === activePresetId;
-              return (
-                <DropdownMenuItem
-                  key={preset.id}
-                  onClick={() => onSelectPreset(preset.id)}
-                  className="flex items-start justify-between gap-2 py-1.5"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-medium text-zinc-900">
-                      {preset.name}
-                    </div>
-                    <div className="line-clamp-2 text-[11px] leading-snug text-zinc-500">
-                      {preset.description}
-                    </div>
-                  </div>
-                  {isSelected && (
-                    <Check className="mt-0.5 size-3.5 shrink-0 text-zinc-700" />
-                  )}
-                </DropdownMenuItem>
-              );
-            })}
+            {PRESET_GROUPS.map((group, groupIndex) => (
+              <Fragment key={group.id}>
+                {groupIndex > 0 && <DropdownMenuSeparator />}
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="text-[11px] font-medium text-zinc-500">
+                    {group.label}
+                  </DropdownMenuLabel>
+                  {group.presets.map((preset) => {
+                    const isSelected = preset.id === activePresetId;
+                    return (
+                      <DropdownMenuItem
+                        key={preset.id}
+                        onClick={() => onSelectPreset(preset.id)}
+                        className="flex items-start justify-between gap-2 py-1.5"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="truncate text-xs font-medium text-zinc-900">
+                              {preset.name}
+                            </span>
+                            {preset.badge && (
+                              <span className="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-1 py-0.2 font-mono text-[10px] font-medium text-zinc-700">
+                                {preset.badge}
+                              </span>
+                            )}
+                          </div>
+                          <div className="line-clamp-2 text-[11px] leading-snug text-zinc-500">
+                            {preset.description}
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <Check className="mt-0.5 size-3.5 shrink-0 text-zinc-700" />
+                        )}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuGroup>
+              </Fragment>
+            ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => onSelectPreset(null)}

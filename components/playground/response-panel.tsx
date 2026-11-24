@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
   AlignJustify,
@@ -18,13 +18,14 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { parseLayaResponse } from "@/lib/laya/parser";
-import { EXAMPLE_PRESETS } from "@/lib/laya/templates";
+import { PRESET_GROUPS } from "@/lib/laya/templates";
 import type { RunResult } from "@/lib/laya/types";
 import { cn } from "@/lib/utils";
 
@@ -227,21 +228,36 @@ export function ResponsePanel({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center" className="w-72">
-              <DropdownMenuLabel>Example presets</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {EXAMPLE_PRESETS.map((preset) => (
-                <DropdownMenuItem
-                  key={preset.id}
-                  onSelect={() => onSelectPreset(preset.id)}
-                  className="flex cursor-pointer flex-col items-start gap-0.5 py-2"
-                >
-                  <span className="text-xs font-medium text-zinc-900">
-                    {preset.name}
-                  </span>
-                  <span className="line-clamp-2 text-[11px] leading-snug text-zinc-500">
-                    {preset.description}
-                  </span>
-                </DropdownMenuItem>
+              {PRESET_GROUPS.map((group, groupIndex) => (
+                <Fragment key={group.id}>
+                  {groupIndex > 0 && <DropdownMenuSeparator />}
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="text-[11px] font-medium text-zinc-500">
+                      {group.label}
+                    </DropdownMenuLabel>
+                    {group.presets.map((preset) => (
+                      <DropdownMenuItem
+                        key={preset.id}
+                        onSelect={() => onSelectPreset(preset.id)}
+                        className="flex cursor-pointer flex-col items-start gap-0.5 py-2"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-medium text-zinc-900">
+                            {preset.name}
+                          </span>
+                          {preset.badge && (
+                            <span className="rounded border border-zinc-200 bg-zinc-50 px-1 py-0.2 font-mono text-[10px] font-medium text-zinc-700">
+                              {preset.badge}
+                            </span>
+                          )}
+                        </div>
+                        <span className="line-clamp-2 text-[11px] leading-snug text-zinc-500">
+                          {preset.description}
+                        </span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuGroup>
+                </Fragment>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>

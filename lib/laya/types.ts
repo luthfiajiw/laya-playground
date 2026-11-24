@@ -135,14 +135,24 @@ export interface PlaygroundWorkspaceState {
   activePresetId?: string;
 }
 
+export type PresetGroupId = "examples" | "walkthrough";
+
 export interface ExamplePreset {
   id: string;
+  group: PresetGroupId;
   name: string;
   description: string;
+  badge?: QuestionType;
   stateMode: StateMode;
   stateText: string;
   questionsText: string;
   settings: LayaSettings;
+}
+
+export interface PresetGroup {
+  id: PresetGroupId;
+  label: string;
+  presets: ExamplePreset[];
 }
 
 export interface QuestionTemplateCard {

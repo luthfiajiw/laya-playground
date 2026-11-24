@@ -14,6 +14,7 @@ const { resolveLayaEndpoints } = require("../url.ts") as typeof UrlModule;
 const { parseLayaResponse } = require("../parser.ts") as typeof ParserModule;
 const {
   EXAMPLE_PRESETS,
+  PRESET_GROUPS,
   QUESTION_TEMPLATE_CARDS,
   buildPredictPayload,
   insertQuestionTemplate,
@@ -246,9 +247,61 @@ test("insertQuestionTemplate creates and increments unique question keys with 2-
   );
 });
 
+test("PRESET_GROUPS contains the 6 official laya-ai.com recipes and 3 single-type walkthrough lessons", () => {
+  assert.equal(PRESET_GROUPS.length, 2);
+  assert.equal(
+    EXAMPLE_PRESETS.some(
+      (p) => p.id === "resume-screening" || p.id === "customer-support-triage"
+    ),
+    false
+  );
+
+  const examplesGroup = PRESET_GROUPS.find((g) => g.id === "examples");
+  assert.ok(examplesGroup);
+  assert.deepEqual(
+    examplesGroup.presets.map((p) => p.id),
+    [
+      "support-ticket-triage",
+      "model-routing",
+      "llm-guardrails",
+      "rag-filtering",
+      "content-moderation",
+      "phishing-detection",
+    ]
+  );
+
+  const walkthroughGroup = PRESET_GROUPS.find((g) => g.id === "walkthrough");
+  assert.ok(walkthroughGroup);
+  assert.equal(walkthroughGroup.label, "Walkthrough lessons");
+  assert.equal(walkthroughGroup.presets.length, 3);
+
+  const demonstratedTypes = walkthroughGroup.presets.map((preset) => {
+    const questions = JSON.parse(preset.questionsText) as Record<
+      string,
+      { type?: string }
+    >;
+    const entries = Object.values(questions);
+    assert.equal(entries.length, 1);
+    return entries[0].type;
+  });
+
+  assert.deepEqual(demonstratedTypes, ["noul", "score", "choice"]);
+
+  for (const preset of EXAMPLE_PRESETS) {
+    const payload = buildPredictPayload(
+      preset.stateMode,
+      preset.stateText,
+      preset.questionsText,
+      preset.settings
+    );
+    assert.ok(payload.state);
+    assert.ok(payload.questions);
+  }
+});
+
 test("buildPredictPayload validates inputs and omits empty optional settings", () => {
   const preset = EXAMPLE_PRESETS[0];
-  assert.equal(preset.id, "customer-support-triage");
+  assert.equal(preset.id, "support-ticket-triage");
 
   const payload = buildPredictPayload(
     preset.stateMode,
