@@ -1,26 +1,212 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --primary: #18181b;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f8f8f9;
+  --muted-foreground: #71717a;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #dc2626;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #a1a1aa;
+  --chart-1: #2563eb;
+  --chart-2: #16a34a;
+  --chart-3: #d97706;
+  --chart-4: #7c3aed;
+  --chart-5: #52525b;
+  --radius: 0.5rem;
+  --sidebar: #f8f8f9;
+  --sidebar-foreground: #18181b;
+  --sidebar-primary: #18181b;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f4f4f5;
+  --sidebar-accent-foreground: #18181b;
+  --sidebar-border: #e4e4e7;
+  --sidebar-ring: #a1a1aa;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Scoped CodeMirror 6 styling matching Jev light aesthetic */
+.laya-cm-editor .cm-theme,
+.laya-cm-editor .cm-editor {
+  height: 100%;
+  background-color: #ffffff;
+  color: #18181b;
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.laya-cm-editor .cm-editor.cm-focused {
+  outline: none;
+}
+
+.laya-cm-editor .cm-scroller {
+  overflow: auto;
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.laya-cm-editor .cm-content {
+  padding: 10px 0;
+  caret-color: #18181b;
+}
+
+.laya-cm-editor .cm-line {
+  padding: 0 12px 0 6px;
+}
+
+.laya-cm-editor .cm-gutters {
+  background-color: #ffffff;
+  color: #a1a1aa;
+  border-right: none;
+  user-select: none;
+  padding-left: 4px;
+}
+
+.laya-cm-editor .cm-lineNumbers .cm-gutterElement {
+  min-width: 30px;
+  padding: 0 4px 0 6px;
+  font-size: 11.5px;
+  color: #a1a1aa;
+  text-align: right;
+}
+
+.laya-cm-editor .cm-activeLineGutter {
+  background-color: transparent;
+  color: #52525b;
+}
+
+.laya-cm-editor .cm-activeLine {
+  background-color: #f8f8f9;
+}
+
+.laya-cm-editor.laya-cm-readonly .cm-activeLine {
+  background-color: transparent;
+}
+
+.laya-cm-editor .cm-foldGutter .cm-gutterElement {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  padding: 0;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.laya-cm-editor .cm-foldGutter .cm-gutterElement:hover {
+  color: #3f3f46;
+}
+
+.laya-cm-editor .cm-foldPlaceholder {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 5px;
+  margin: 0 2px;
+  border-radius: 4px;
+  border: 1px solid #e4e4e7;
+  background-color: #f8f8f9;
+  color: #71717a;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.laya-cm-editor .cm-placeholder {
+  color: #a1a1aa;
+}
+
+.laya-cm-editor .cm-selectionBackground,
+.laya-cm-editor .cm-editor.cm-focused .cm-selectionBackground {
+  background-color: #e4e4e7 !important;
+}
+
+.laya-cm-editor .cm-lintRange-error {
+  background-image: none;
+  text-decoration: underline wavy #dc2626;
+  text-underline-offset: 2px;
+}
+
+.laya-cm-editor .cm-gutter-lint {
+  width: 14px;
+}
+
+.laya-cm-editor .cm-tooltip-lint {
+  border: 1px solid #e4e4e7;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #18181b;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.08);
 }
