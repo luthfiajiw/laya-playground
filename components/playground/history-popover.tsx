@@ -123,7 +123,7 @@ export function HistoryPopover({
         <TooltipContent side="bottom">Recent request history</TooltipContent>
       </Tooltip>
 
-      <PopoverContent align="end" className="w-84 p-0">
+      <PopoverContent align="end" className="w-84 gap-0 overflow-hidden p-0">
         <div className="flex items-center justify-between border-b border-zinc-200 px-3 py-2">
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-medium text-zinc-900">
@@ -161,7 +161,10 @@ export function HistoryPopover({
             </p>
           </div>
         ) : (
-          <ScrollArea className="max-h-80">
+          <ScrollArea
+            type="auto"
+            className="max-h-80 [&_[data-slot=scroll-area-viewport]>div]:block!"
+          >
             <div className="divide-y divide-zinc-100">
               {visibleEntries.map((entry) => {
                 const modelName = extractModelName(entry);
