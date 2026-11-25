@@ -87,11 +87,13 @@ function indexSentQuestions(
     const criteria = extractCriteria(raw.criteria);
     const optionsSource = isPlainObject(raw.criteria)
       ? Object.keys(raw.criteria).length
-      : Array.isArray(raw.options)
-        ? raw.options.length
-        : Array.isArray(raw.choices)
-          ? raw.choices.length
-          : undefined;
+      : Array.isArray(raw.criteria)
+        ? raw.criteria.length
+        : Array.isArray(raw.options)
+          ? raw.options.length
+          : Array.isArray(raw.choices)
+            ? raw.choices.length
+            : undefined;
     const levelSource = Array.isArray(raw.criteria)
       ? raw.criteria.length
       : isPlainObject(raw.criteria)
@@ -131,6 +133,14 @@ function indexSentQuestions(
   }
 
   return map;
+}
+
+function getChoiceDescription(
+  collection: Record<string, string> | string[] | undefined,
+  label: string
+): string | undefined {
+  if (!collection || Array.isArray(collection)) return undefined;
+  return collection[label];
 }
 
 function getDescriptionFromCollection(
@@ -316,17 +326,17 @@ function normalizeChoiceItem(
       .filter(([, v]) => typeof v === "number" && Number.isFinite(v))
       .sort(([, a], [, b]) => (b as number) - (a as number));
 
-    entries.forEach(([label, probability], idx) => {
+    entries.forEach(([label, probability]) => {
       rankedOptions.push({
         label,
         probability: probability as number,
         description:
-          getDescriptionFromCollection(legend, label, idx) ??
-          getDescriptionFromCollection(criteria, label, idx),
+          getChoiceDescription(legend, label) ??
+          getChoiceDescription(criteria, label),
       });
     });
   } else if (Array.isArray(obj.rankedOptions)) {
-    obj.rankedOptions.forEach((opt, idx) => {
+    obj.rankedOptions.forEach((opt) => {
       if (isPlainObject(opt) && typeof opt.label === "string") {
         rankedOptions.push({
           label: opt.label,
@@ -334,7 +344,7 @@ function normalizeChoiceItem(
           description:
             typeof opt.description === "string"
               ? opt.description
-              : getDescriptionFromCollection(criteria, opt.label, idx),
+              : getChoiceDescription(criteria, opt.label),
         });
       }
     });
@@ -347,7 +357,7 @@ function normalizeChoiceItem(
     rankedOptions.push({
       label: explicitChoice,
       probability: confidence ?? 1,
-      description: getDescriptionFromCollection(criteria, explicitChoice, 0),
+      description: getChoiceDescription(criteria, explicitChoice),
     });
   }
 
@@ -436,8 +446,9 @@ function normalizeAnswerEntry(
 }
 
 /**
- * Unwraps Laya / Jev response payloads flexibly and normalizes each answer
- * into a discriminated union (`score` | `noul` | `choice` | `generic`),
+ * Parses Laya `/predict` responses (primary raw `{ model, answers, ... }` format,
+ * with fallback for legacy `{ response: ... }` and flat payloads) and normalizes
+ * each answer into a discriminated union (`score` | `noul` | `choice` | `generic`),
  * enriching items with `instructions` and `criteria` from `sentQuestions`.
  */
 export function parseLayaResponse(
@@ -459,19 +470,28 @@ export function parseLayaResponse(
   }
 
   let model: string | undefined =
-    typeof rawData.model === "string" ? rawData.model : undefined;
+    typeof rawData.model === "string" && rawData.model.trim()
+      ? rawData.model.trim()
+      : undefined;
   let answersSource: Record<string, unknown>;
 
-  if (isPlainObject(rawData.response)) {
+  if (isPlainObject(rawData.answers)) {
+    answersSource = rawData.answers;
+    for (const [k, v] of Object.entries(rawData)) {
+      if (k !== "answers" && !(k === "model" && typeof v === "string")) {
+        extraFields.push({ key: k, value: v });
+      }
+    }
+  } else if (isPlainObject(rawData.response)) {
     const resp = rawData.response;
     for (const [k, v] of Object.entries(rawData)) {
-      if (k !== "response" && k !== "model") {
+      if (k !== "response" && !(k === "model" && typeof v === "string")) {
         extraFields.push({ key: k, value: v });
       }
     }
 
-    if (typeof resp.model === "string") {
-      model = resp.model;
+    if (typeof resp.model === "string" && resp.model.trim()) {
+      model = resp.model.trim();
     }
 
     if (isPlainObject(resp.answers)) {
@@ -486,13 +506,6 @@ export function parseLayaResponse(
       for (const [k, v] of Object.entries(resp)) {
         if (k === "model" && typeof v === "string") continue;
         answersSource[k] = v;
-      }
-    }
-  } else if (isPlainObject(rawData.answers)) {
-    answersSource = rawData.answers;
-    for (const [k, v] of Object.entries(rawData)) {
-      if (k !== "answers" && !(k === "model" && typeof v === "string")) {
-        extraFields.push({ key: k, value: v });
       }
     }
   } else {

@@ -43,6 +43,9 @@ function extractModelName(entry: HistoryEntry): string | undefined {
   const raw = entry.result.rawData;
   if (raw && typeof raw === "object" && !Array.isArray(raw)) {
     const record = raw as Record<string, unknown>;
+    if (typeof record.model === "string" && record.model.trim()) {
+      return record.model.trim();
+    }
     if (
       record.response &&
       typeof record.response === "object" &&
@@ -52,9 +55,6 @@ function extractModelName(entry: HistoryEntry): string | undefined {
       if (typeof resp.model === "string" && resp.model.trim()) {
         return resp.model.trim();
       }
-    }
-    if (typeof record.model === "string" && record.model.trim()) {
-      return record.model.trim();
     }
   }
   if (entry.settings.model?.trim()) {

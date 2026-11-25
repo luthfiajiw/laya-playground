@@ -70,7 +70,7 @@ test("resolveLayaEndpoints rejects empty, invalid, and non-HTTP(S) URLs", () => 
   assert.throws(() => resolveLayaEndpoints("file:///etc/passwd"), /http/i);
 });
 
-test("parseLayaResponse handles Laya native response and enriches from sentQuestions object", () => {
+test("parseLayaResponse handles raw Laya response ({ model, answers }) and enriches from sentQuestions object", () => {
   const sentQuestions = {
     department: {
       type: "choice",
@@ -93,7 +93,8 @@ test("parseLayaResponse handles Laya native response and enriches from sentQuest
   };
 
   const rawData = {
-    response: {
+    model: "laya-1.0",
+    answers: {
       department: {
         choice: "billing",
         confidence: 0.96,
@@ -117,6 +118,8 @@ test("parseLayaResponse handles Laya native response and enriches from sentQuest
   };
 
   const parsed = parseLayaResponse(rawData, sentQuestions);
+  assert.equal(parsed.model, "laya-1.0");
+  assert.deepEqual(parsed.extraFields, []);
   assert.equal(parsed.items.length, 3);
 
   const dept = parsed.items[0];
@@ -148,7 +151,7 @@ test("parseLayaResponse handles Laya native response and enriches from sentQuest
   }
 });
 
-test("parseLayaResponse handles Jev nested format, low_confidence, array sentQuestions, and generic fallback", () => {
+test("parseLayaResponse handles raw Laya extra fields, low_confidence, array sentQuestions, generic fallback, and legacy response wrapper", () => {
   const sentQuestions = [
     {
       key: "years_of_experience",
@@ -163,30 +166,28 @@ test("parseLayaResponse handles Jev nested format, low_confidence, array sentQue
 
   const rawData = {
     latency_ms: 44,
-    response: {
-      model: "jev-1.13.0",
-      answers: {
-        years_of_experience: {
-          score: 2.99,
-          confidence: 0.61,
-          low_confidence: true,
-          probabilities: {
-            "0": 0.01,
-            "1": 0.04,
-            "2": 0.15,
-            "3": 0.61,
-            "4": 0.14,
-            "5": 0.05,
-          },
-          legend: { "3": "5-7 years" },
-          stats: { tokens: 256 },
+    model: "jev-1.13.0",
+    answers: {
+      years_of_experience: {
+        score: 2.99,
+        confidence: 0.61,
+        low_confidence: true,
+        probabilities: {
+          "0": 0.01,
+          "1": 0.04,
+          "2": 0.15,
+          "3": 0.61,
+          "4": 0.14,
+          "5": 0.05,
         },
-        custom_note: {
-          summary: "Strong distributed systems background",
-          tags: ["go", "payments"],
-        },
-        scalar_flag: true,
+        legend: { "3": "5-7 years" },
+        stats: { tokens: 256 },
       },
+      custom_note: {
+        summary: "Strong distributed systems background",
+        tags: ["go", "payments"],
+      },
+      scalar_flag: true,
     },
   };
 
@@ -220,6 +221,15 @@ test("parseLayaResponse handles Jev nested format, low_confidence, array sentQue
     assert.equal(genericBool.valueType, "boolean");
     assert.equal(genericBool.value, true);
   }
+
+  // Legacy wrapped { response: ... } fallback remains supported for older saved history
+  const legacyParsed = parseLayaResponse(
+    { latency_ms: 12, response: { model: "legacy-1.0", answers: { years_of_experience: { score: 4 } } } },
+    sentQuestions
+  );
+  assert.equal(legacyParsed.model, "legacy-1.0");
+  assert.equal(legacyParsed.items.length, 1);
+  assert.equal(legacyParsed.items[0].kind, "score");
 });
 
 test("insertQuestionTemplate creates and increments unique question keys with 2-space formatting", () => {
@@ -287,6 +297,16 @@ test("PRESET_GROUPS contains the 6 official laya-ai.com recipes and 3 single-typ
 
   assert.deepEqual(demonstratedTypes, ["noul", "score", "choice"]);
 
+  for (const card of QUESTION_TEMPLATE_CARDS) {
+    if (card.type === "choice") {
+      assert.ok(Array.isArray(card.template.criteria));
+      assert.ok(
+        card.template.criteria.length > 0 &&
+          card.template.criteria.every((c) => typeof c === "string" && c.length > 0)
+      );
+    }
+  }
+
   for (const preset of EXAMPLE_PRESETS) {
     const payload = buildPredictPayload(
       preset.stateMode,
@@ -296,7 +316,79 @@ test("PRESET_GROUPS contains the 6 official laya-ai.com recipes and 3 single-typ
     );
     assert.ok(payload.state);
     assert.ok(payload.questions);
+
+    const questions = payload.questions as Record<
+      string,
+      { type?: string; criteria?: unknown }
+    >;
+    for (const [key, q] of Object.entries(questions)) {
+      if (q.type === "choice") {
+        assert.ok(
+          Array.isArray(q.criteria),
+          `Preset "${preset.id}" choice question "${key}" should have array criteria`
+        );
+        assert.ok(
+          q.criteria.length > 0 &&
+            q.criteria.every((c) => typeof c === "string" && c.length > 0),
+          `Preset "${preset.id}" choice question "${key}" criteria items must be non-empty strings`
+        );
+      }
+    }
   }
+});
+
+test("parseLayaResponse handles array criteria on choice without positional description mismatch", () => {
+  const sentQuestions = {
+    department: {
+      type: "choice",
+      instructions: "Which team should handle this ticket?",
+      criteria: ["billing", "technical", "sales"],
+    },
+  };
+
+  const rawData = {
+    model: "laya-1.0",
+    answers: {
+      department: {
+        choice: "sales",
+        confidence: 0.88,
+        probabilities: {
+          billing: 0.05,
+          technical: 0.07,
+          sales: 0.88,
+        },
+      },
+    },
+  };
+
+  const parsed = parseLayaResponse(rawData, sentQuestions);
+  assert.equal(parsed.model, "laya-1.0");
+  assert.equal(parsed.items.length, 1);
+  const dept = parsed.items[0];
+  assert.equal(dept.kind, "choice");
+  if (dept.kind === "choice") {
+    assert.equal(dept.choice, "sales");
+    assert.equal(dept.optionCount, 3);
+    assert.equal(dept.rankedOptions[0].label, "sales");
+    assert.equal(dept.rankedOptions[0].description, undefined);
+    assert.equal(dept.rankedOptions[1].label, "technical");
+    assert.equal(dept.rankedOptions[1].description, undefined);
+  }
+
+  // Raw { model, answers } takes precedence even if an extra `response` object exists
+  const withExtraResponse = parseLayaResponse(
+    {
+      model: "laya-1.0",
+      answers: rawData.answers,
+      response: { ignored: { noul: 0.1 } },
+    },
+    sentQuestions
+  );
+  assert.equal(withExtraResponse.items.length, 1);
+  assert.equal(withExtraResponse.items[0].key, "department");
+  assert.deepEqual(withExtraResponse.extraFields, [
+    { key: "response", value: { ignored: { noul: 0.1 } } },
+  ]);
 });
 
 test("buildPredictPayload validates inputs and omits empty optional settings", () => {

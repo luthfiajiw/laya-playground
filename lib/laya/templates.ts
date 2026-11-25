@@ -47,11 +47,7 @@ export const QUESTION_TEMPLATE_CARDS: QuestionTemplateCard[] = [
     template: {
       type: "choice",
       instructions: "Select the best matching category.",
-      criteria: {
-        option_a: "keywords or description for option A",
-        option_b: "keywords or description for option B",
-        option_c: "keywords or description for option C",
-      },
+      criteria: ["option_a", "option_b", "option_c"],
     },
   },
 ];
@@ -75,11 +71,7 @@ export const PRESET_GROUPS: PresetGroup[] = [
             department: {
               type: "choice",
               instructions: "Which team should handle this ticket?",
-              criteria: {
-                billing: "payments, invoices, refunds",
-                technical: "bugs and outages",
-                sales: "pricing and contracts",
-              },
+              criteria: ["billing", "technical", "sales"],
             },
             urgency: {
               type: "score",
@@ -110,11 +102,7 @@ export const PRESET_GROUPS: PresetGroup[] = [
             model_tier: {
               type: "choice",
               instructions: "Which model tier should handle this request?",
-              criteria: {
-                small: "simple extraction",
-                balanced: "normal reasoning",
-                frontier: "deep technical reasoning",
-              },
+              criteria: ["small", "balanced", "frontier"],
             },
             needs_reasoning: {
               type: "noul",
@@ -146,11 +134,7 @@ export const PRESET_GROUPS: PresetGroup[] = [
             action: {
               type: "choice",
               instructions: "What should the workflow do next?",
-              criteria: {
-                allow: "normal",
-                review: "uncertain",
-                block: "clear jailbreak",
-              },
+              criteria: ["allow", "review", "block"],
             },
           },
           null,
@@ -206,11 +190,7 @@ export const PRESET_GROUPS: PresetGroup[] = [
             moderation_action: {
               type: "choice",
               instructions: "How should this message be handled?",
-              criteria: {
-                allow: "benign",
-                review: "borderline",
-                block: "clear abuse or threat",
-              },
+              criteria: ["allow", "review", "block"],
             },
             threat: {
               type: "noul",
@@ -237,11 +217,7 @@ export const PRESET_GROUPS: PresetGroup[] = [
             email_type: {
               type: "choice",
               instructions: "How should this email be classified?",
-              criteria: {
-                normal: "legitimate",
-                spam: "bulk promotion",
-                phishing: "credential theft",
-              },
+              criteria: ["normal", "spam", "phishing"],
             },
             credential_theft: {
               type: "noul",
@@ -337,11 +313,7 @@ export const PRESET_GROUPS: PresetGroup[] = [
             department: {
               type: "choice",
               instructions: "Which team should handle this customer inquiry?",
-              criteria: {
-                billing: "invoices, charges, payment failures, or refunds",
-                technical: "bugs, outages, API errors, or integration help",
-                sales: "pricing, plan upgrades, seat expansion, or contracts",
-              },
+              criteria: ["billing", "technical", "sales"],
             },
           },
           null,
@@ -384,8 +356,7 @@ export function insertQuestionTemplate(
       raw = JSON.parse(trimmed);
     } catch (err) {
       throw new Error(
-        `Cannot insert question: current Questions JSON is invalid (${
-          err instanceof Error ? err.message : "parse error"
+        `Cannot insert question: current Questions JSON is invalid (${err instanceof Error ? err.message : "parse error"
         }).`
       );
     }
@@ -471,8 +442,7 @@ export function buildPredictPayload(
       stateValue = JSON.parse(trimmedState);
     } catch (err) {
       throw new Error(
-        `State JSON is invalid: ${
-          err instanceof Error ? err.message : "parse error"
+        `State JSON is invalid: ${err instanceof Error ? err.message : "parse error"
         }`
       );
     }
@@ -505,8 +475,7 @@ export function buildPredictPayload(
     questionsValue = JSON.parse(trimmedQuestions);
   } catch (err) {
     throw new Error(
-      `Questions JSON is invalid: ${
-        err instanceof Error ? err.message : "parse error"
+      `Questions JSON is invalid: ${err instanceof Error ? err.message : "parse error"
       }`
     );
   }
